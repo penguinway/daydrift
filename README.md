@@ -2,7 +2,7 @@
 
 > 记录每一个值得铭记的日子，见证时光流逝。
 
-一款受 Apple "Days Since" 启发的 Flutter 应用，以温暖木纹为底，记录你生命中每一个特殊日期距今已过了多少天。
+一款受 Apple "Day Matter" 启发的 Flutter 应用，以温暖木纹为底，记录你生命中每一个特殊日期距今已过了多少天。
 
 ---
 
@@ -19,7 +19,9 @@
 
 ## 截图
 
-> *(截图待补充)*
+> ![](https://image.penguinway.space/i/2026/03/08/69ad39d07c469.png)
+>
+> ![](https://image.penguinway.space/i/2026/03/08/69ad39ef05bd0.png)
 
 ---
 
