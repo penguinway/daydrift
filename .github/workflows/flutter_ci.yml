@@ -1,76 +1,13 @@
-name: Flutter CI
+name: Release
 
 on:
   push:
-    branches: [ main ]
     tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  # ── 分析 + 测试 ──────────────────────────────────────────────
-  analyze:
-    name: Analyze & Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.4'
-          channel: stable
-          cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Run tests
-        run: flutter test
-
-  # ── 构建 APK ─────────────────────────────────────────────────
-  build:
-    name: Build APK
-    runs-on: ubuntu-latest
-    needs: analyze
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.4'
-          channel: stable
-          cache: true
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build split APKs
-        run: flutter build apk --release --split-per-abi
-
-      - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-release
-          path: build/app/outputs/flutter-apk/*-release.apk
-          retention-days: 14
-
-  # ── 发布 Release（仅 tag 触发）──────────────────────────────
   release:
-    name: Create Release
+    name: Build & Release
     runs-on: ubuntu-latest
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
@@ -92,6 +29,12 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
       - name: Build split APKs
         run: flutter build apk --release --split-per-abi
 
@@ -104,7 +47,7 @@ jobs:
         with:
           name: 时光 ${{ steps.tag.outputs.version }}
           body: |
-            ## 时光 · Days Since ${{ steps.tag.outputs.version }}
+            ## 时光 · DayDrift ${{ steps.tag.outputs.version }}
 
             ### 安装说明
             - **现代手机（推荐）**：下载 `app-arm64-v8a-release.apk`
