@@ -57,7 +57,7 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
-  void _save() async {
+  Future<void> _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,6 +68,7 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
 
     if (_reminderEnabled) {
       await NotificationService().requestPermission();
+      if (!mounted) return;
     }
 
     final event = EventModel(
@@ -81,10 +82,11 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
     );
 
     if (_isEditing) {
-      ref.read(eventsProvider.notifier).updateEvent(event);
+      await ref.read(eventsProvider.notifier).updateEvent(event);
     } else {
-      ref.read(eventsProvider.notifier).addEvent(event);
+      await ref.read(eventsProvider.notifier).addEvent(event);
     }
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
@@ -203,7 +205,7 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
                       Switch(
                         value: _reminderEnabled,
                         onChanged: (v) => setState(() => _reminderEnabled = v),
-                        activeColor: const Color(0xFFFF9500),
+                        activeThumbColor: const Color(0xFFFF9500),
                       ),
                     ],
                   ),
