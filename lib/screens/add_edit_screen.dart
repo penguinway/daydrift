@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/event_model.dart';
 import '../providers/events_provider.dart';
+import '../services/notification_service.dart';
 
 class AddEditScreen extends ConsumerStatefulWidget {
   final EventModel? event; // null = 新增
@@ -18,6 +19,10 @@ class AddEditScreen extends ConsumerStatefulWidget {
 class _AddEditScreenState extends ConsumerState<AddEditScreen> {
   late final TextEditingController _nameCtrl;
   late DateTime _selectedDate;
+  late bool _reminderEnabled;
+  late int _reminderDaysBefore;
+  late int _reminderHour;
+  late int _reminderMinute;
   final _uuid = const Uuid();
 
   bool get _isEditing => widget.event != null;
@@ -27,6 +32,10 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.event?.name ?? '');
     _selectedDate = widget.event?.date ?? DateTime.now();
+    _reminderEnabled = widget.event?.reminderEnabled ?? false;
+    _reminderDaysBefore = widget.event?.reminderDaysBefore ?? 0;
+    _reminderHour = widget.event?.reminderHour ?? 8;
+    _reminderMinute = widget.event?.reminderMinute ?? 0;
   }
 
   @override
@@ -48,7 +57,7 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
-  void _save() {
+  void _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,10 +66,18 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
       return;
     }
 
+    if (_reminderEnabled) {
+      await NotificationService().requestPermission();
+    }
+
     final event = EventModel(
       id: widget.event?.id ?? _uuid.v4(),
       name: name,
       date: _selectedDate,
+      reminderEnabled: _reminderEnabled,
+      reminderDaysBefore: _reminderDaysBefore,
+      reminderHour: _reminderHour,
+      reminderMinute: _reminderMinute,
     );
 
     if (_isEditing) {
@@ -100,7 +117,7 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,6 +180,78 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
                     const Icon(Icons.chevron_right, color: Color(0xFFAAAAAA)),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // 提醒设置
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFDDDDDD)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.notifications_outlined, color: Color(0xFFFF9500), size: 20),
+                      const SizedBox(width: 8),
+                      Text('纪念日提醒', style: GoogleFonts.inter(color: const Color(0xFF8B5E3C), fontSize: 14, fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      Switch(
+                        value: _reminderEnabled,
+                        onChanged: (v) => setState(() => _reminderEnabled = v),
+                        activeColor: const Color(0xFFFF9500),
+                      ),
+                    ],
+                  ),
+                  if (_reminderEnabled) ...[
+                    const SizedBox(height: 12),
+                    Text('提前提醒', style: GoogleFonts.inter(color: const Color(0xFF8B5E3C), fontSize: 12)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [0, 1, 3, 7].map((d) => ChoiceChip(
+                        label: Text(d == 0 ? '当天' : '$d天前'),
+                        selected: _reminderDaysBefore == d,
+                        onSelected: (_) => setState(() => _reminderDaysBefore = d),
+                        selectedColor: const Color(0xFFFF9500).withValues(alpha: 0.2),
+                        labelStyle: GoogleFonts.inter(
+                          color: _reminderDaysBefore == d ? const Color(0xFFFF9500) : const Color(0xFF8E8E93),
+                          fontWeight: FontWeight.w500, fontSize: 13,
+                        ),
+                        backgroundColor: const Color(0xFFF8F8F8),
+                        side: BorderSide(color: _reminderDaysBefore == d ? const Color(0xFFFF9500) : const Color(0xFFEEEEEE)),
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay(hour: _reminderHour, minute: _reminderMinute),
+                          cancelText: '取消',
+                          confirmText: '确定',
+                        );
+                        if (picked != null) setState(() { _reminderHour = picked.hour; _reminderMinute = picked.minute; });
+                      },
+                      child: Row(
+                        children: [
+                          Text('提醒时间', style: GoogleFonts.inter(color: const Color(0xFF8B5E3C), fontSize: 12)),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${_reminderHour.toString().padLeft(2, '0')}:${_reminderMinute.toString().padLeft(2, '0')}',
+                            style: GoogleFonts.inter(color: const Color(0xFFFF9500), fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.access_time, color: Color(0xFFFF9500), size: 16),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],

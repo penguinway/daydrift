@@ -173,8 +173,8 @@ class EventCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.edit_outlined, color: Color(0xFFFF9500)),
-              title: Text('编辑', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+              leading: const Icon(Icons.edit_outlined, color: Color(0xFF3C3C3C)),
+              title: Text('编辑', style: GoogleFonts.inter(color: const Color(0xFF3C3C3C), fontWeight: FontWeight.w500)),
               onTap: () { Navigator.pop(context); onEdit(); },
             ),
             ListTile(
