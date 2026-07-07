@@ -23,6 +23,7 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
   late int _reminderDaysBefore;
   late int _reminderHour;
   late int _reminderMinute;
+  var _isSaving = false;
   final _uuid = const Uuid();
 
   bool get _isEditing => widget.event != null;
@@ -58,6 +59,8 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
+
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,28 +69,41 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
       return;
     }
 
-    if (_reminderEnabled) {
-      await NotificationService().requestPermission();
+    setState(() => _isSaving = true);
+    try {
+      if (_reminderEnabled) {
+        await NotificationService().requestPermission();
+        if (!mounted) return;
+      }
+
+      final event = EventModel(
+        id: widget.event?.id ?? _uuid.v4(),
+        name: name,
+        date: _selectedDate,
+        reminderEnabled: _reminderEnabled,
+        reminderDaysBefore: _reminderDaysBefore,
+        reminderHour: _reminderHour,
+        reminderMinute: _reminderMinute,
+      );
+
+      if (_isEditing) {
+        await ref.read(eventsProvider.notifier).updateEvent(event);
+      } else {
+        await ref.read(eventsProvider.notifier).addEvent(event);
+      }
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_isEditing ? '事件已保存' : '事件已添加')),
+      );
+      Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存失败：$error')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    final event = EventModel(
-      id: widget.event?.id ?? _uuid.v4(),
-      name: name,
-      date: _selectedDate,
-      reminderEnabled: _reminderEnabled,
-      reminderDaysBefore: _reminderDaysBefore,
-      reminderHour: _reminderHour,
-      reminderMinute: _reminderMinute,
-    );
-
-    if (_isEditing) {
-      await ref.read(eventsProvider.notifier).updateEvent(event);
-    } else {
-      await ref.read(eventsProvider.notifier).addEvent(event);
-    }
-    if (!mounted) return;
-    Navigator.pop(context);
   }
 
   @override
@@ -104,13 +120,13 @@ class _AddEditScreenState extends ConsumerState<AddEditScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           GestureDetector(
-            onTap: _save,
+            onTap: _isSaving ? null : _save,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Text(
-                '保存',
+                _isSaving ? '保存中' : '保存',
                 style: GoogleFonts.inter(
-                  color: Colors.white,
+                  color: _isSaving ? Colors.white70 : Colors.white,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),

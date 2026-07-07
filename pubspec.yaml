@@ -1,7 +1,7 @@
 name: love_time
 description: "A Days Since app inspired by Apple's design."
 publish_to: 'none'
-version: 1.1.1+2
+version: 1.2.0+3
 
 environment:
   sdk: ^3.11.1

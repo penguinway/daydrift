@@ -43,9 +43,9 @@ class EventsNotifier extends AsyncNotifier<List<EventModel>> {
   Future<void> deleteEvent(String id) async {
     final current = state.valueOrNull ?? [];
     final event = current.firstWhere((e) => e.id == id);
-    await _notifications.cancelReminder(event);
     final updated = current.where((e) => e.id != id).toList();
     state = AsyncData(updated);
     await _repo.saveEvents(updated);
+    await _notifications.cancelReminder(event);
   }
 }

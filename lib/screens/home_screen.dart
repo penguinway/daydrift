@@ -75,8 +75,19 @@ class HomeScreen extends ConsumerWidget {
               ctx,
               MaterialPageRoute(builder: (_) => AddEditScreen(event: events[i])),
             ),
-            onDelete: () =>
-                ref.read(eventsProvider.notifier).deleteEvent(events[i].id),
+            onDelete: () async {
+              final messenger = ScaffoldMessenger.of(ctx);
+              try {
+                await ref.read(eventsProvider.notifier).deleteEvent(events[i].id);
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('事件已删除')),
+                );
+              } catch (error) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('删除失败：$error')),
+                );
+              }
+            },
           ),
         );
       },
